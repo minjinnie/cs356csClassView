@@ -29,22 +29,29 @@ export default function CourseGrid({ courses, matches, selected, onSelect }: Pro
   return (
     <div className="gridwrap">
       {sortedDepartments.map(department => {
-        const deptCourses = coursesByDepartment[department];
+        const deptCourses = coursesByDepartment[department].sort((a, b) => {
+          if (a.requirement === 'Core' && b.requirement === 'Core') return a.number - b.number;
+          if (a.requirement === 'Core') return -1;
+          if (b.requirement === 'Core') return 1;
+          return a.number - b.number;
+        });
         
         // Group by level within department
         const sections = [100, 200, 300, 400, 500];
         const hasAnyCourses = sections.some(base => 
           deptCourses.some(c => Math.floor(c.number / 100) * 100 === base)
         );
+        const hasAllFaded = deptCourses.every(c => matches.size > 0 && !matches.has(c.id));
         
-        if (!hasAnyCourses) return null;
+        if (!hasAnyCourses || hasAllFaded) return null;
 
         return (
           <div key={department} className="department-section">
             <h2 className="department-header">{department} Courses</h2>
             {sections.map(base => {
               const inBand = deptCourses.filter(c => Math.floor(c.number / 100) * 100 === base);
-              if (inBand.length === 0) return null;
+              const inBandHasAllFaded = inBand.every(c => matches.size > 0 && !matches.has(c.id));
+              if (inBand.length === 0 || inBandHasAllFaded) return null;
               
               return (
                 <section key={`${department}-${base}`} className="band">
